@@ -1,0 +1,4 @@
+program ../src/json-validate
+args -p /properties/books/properties/~01~1 $srcdir/p-option/schema.json $srcdir/p-option/fits_type_integer.json
+description "use of ~1 and ~0 in pointer"
+return 0

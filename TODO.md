@@ -1,0 +1,3 @@
+- add to list of test suite useres at https://github.com/json-schema-org/JSON-Schema-Test-Suite
+- tests for Json::Pointer class
+- tests for Json::URI class

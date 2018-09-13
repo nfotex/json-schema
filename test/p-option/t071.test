@@ -1,0 +1,7 @@
+program ../src/json-validate
+args -p /definitions/author/properties/colleague/properties/colleague $srcdir/p-option/schema.json $srcdir/p-option/fits_subschema_author.json
+description "points to a recursive schema in second level"
+return 1
+stderr-replace ^.*/p-option/ p-option/
+stderr can't create validator: invalid schema pointer
+stderr p-option/fits_subschema_author.json:: member 'properties' doesn't exist

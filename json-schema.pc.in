@@ -1,0 +1,14 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+bindir=@bindir@
+libdir=@libdir@
+includedir=@includedir@
+
+json-validate=@bindir@/json-validate
+
+Name: json-schema
+Description: library for validating JSON Schemata
+Version: @VERSION@
+Libs: @PKG_CONFIG_RPATH@ -L${libdir} -ljson-schema
+Libs.private: @LIBS@
+Cflags: -I${includedir}

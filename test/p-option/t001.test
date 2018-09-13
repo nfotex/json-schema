@@ -1,0 +1,4 @@
+program ../src/json-validate
+args -p "" $srcdir/p-option/schema.json $srcdir/p-option/fits_schema_root.json
+description "empty string points to root schema"
+return 0

@@ -1,0 +1,4 @@
+program ../src/json-validate
+args -p "/properties/books/properties/other books" $srcdir/p-option/schema.json $srcdir/p-option/fits_subschema_otherbooks.json
+description "json value should fit on root object"
+return 0

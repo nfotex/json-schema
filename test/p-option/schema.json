@@ -1,0 +1,45 @@
+{
+	"title": "schema for all p option tests",
+	"type": "object",
+	"": { "type": "string" },
+	"definitions": {
+		"author": {
+			"type": "object",
+			"properties": {
+				"name": { "type": "string"},
+				"age": { "type": "integer", "minimum": 0, "maximum": 125 },
+				"colleague": { "$ref": "#/definitions/author" }
+			},
+			"additionalProperties": false
+		},
+		"title": {
+			"type": "string"
+		}
+	},
+	"properties": {
+		"books": { 
+			"type": "object", 
+			"properties": {
+				"Kochbücher": { 
+					"type": "array",
+					"items": { "$ref": "#/definitions/title" }
+				},
+				"other books": { "type": "integer" },
+				"~1/": { "type": "integer" },
+				"%20": { "type": "integer" }
+			},
+			"additionalProperties": false
+		},
+		"seasons": {
+			"type": "array",
+			"items": [
+				{ "type": "object", "properties": { "spring": { "type": "string" }}, "additionalProperties": false },
+				{ "type": "object", "properties": { "summer": { "type": "string" }}, "additionalProperties": false },
+				{ "type": "object", "properties": { "fall": { "type": "string" }}, "additionalProperties": false },
+				{ "type": "object", "properties": { "winter": { "type": "string" }}, "additionalProperties": false }
+			],
+			"additionalItems": false
+		}
+	},
+	"additionalProperties": false
+}

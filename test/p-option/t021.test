@@ -1,0 +1,7 @@
+program ../src/json-validate
+args -p /properties/books/properties/other%20books $srcdir/p-option/schema.json $srcdir/p-option/fits_schema_otherbooks.json
+description "pointer contains space, percent encoded"
+return 1
+stderr-replace ^.*/p-option/ p-option/
+stderr can't create validator: invalid schema pointer
+stderr p-option/fits_schema_otherbooks.json:: member 'other%20books' doesn't exist

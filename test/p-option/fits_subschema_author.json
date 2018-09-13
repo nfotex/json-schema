@@ -1,0 +1,5 @@
+{
+	"name": "John Doe",
+	"age": 100,
+	"colleague": { "name": "Mr Nobody", "age": 121 }
+}

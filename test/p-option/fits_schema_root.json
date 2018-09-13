@@ -1,0 +1,12 @@
+{
+	"books": {
+		"Kochbücher": [ "Perl Cookbook" ],
+		"other books": 2
+	},
+	"seasons": [
+		{"spring": "sunny but cold"},
+		{"summer": "sunny and warm"},
+		{"fall": "cloudy and warm"},
+		{"winter": "cloudy and cold"}
+	]
+}

@@ -1,0 +1,7 @@
+program ../src/json-validate
+args -p /properties/books/properties/Kochb%C3%BCcher $srcdir/p-option/schema.json $srcdir/p-option/fits_subschema_cookbooks.json
+description "pointer contains ü, percent encoded (UTF-8)"
+return 1
+stderr-replace ^.*/p-option/ p-option/
+stderr can't create validator: invalid schema pointer
+stderr p-option/fits_subschema_cookbooks.json:: member 'Kochb%C3%BCcher' doesn't exist

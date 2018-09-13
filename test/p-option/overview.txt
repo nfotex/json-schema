@@ -1,0 +1,24 @@
+json-validate -p
+----------------
+
+The command line option p available with json-validate makes it possible to choose a subschema from the schema file. The provided JSON file is tested against this subschema and not against the root schema. The option expects a JSON pointer as their argument, which is not allowed to be percent encoded.
+
+Tests are listed below. Each test is described by a unique test number, a letter which denotes whether the outcome of the test meets the expected outcome (o) or not (X), PASS/FAIL to indicate the expected outcome, the pointer used in the test and the test description. Tests are based on the specifications found in the most recent RFC 6901 on JSON pointer.
+
+001o PASS - "" - empty string points to root schema
+002o PASS - "/properties/books" - valid pointer to subschema
+003o PASS - "/" - pointer to the empty string subschema
+010o FAIL - "string" - string instead of pointer
+011o FAIL - "/properties/boks" - typo in reference, points to non-existent subschema
+020o PASS - "/properties/books/properties/other books" - pointer contains space
+021o FAIL - "/properties/books/properties/other%20books" - pointer contains space, percent encoded
+022o FAIL - "/properties/books/properties/other%2books" - pointer contains space, invalid percent encoding
+030o PASS - "/properties/books/properties/Kochbücher" - pointer contains ü
+031o FAIL - "/properties/books/properties/Kochb%C3%BCcher" - pointer contains ü, percent encoded (UTF-8)
+050o PASS - "/properties/books/properties/~01~1" - use of ~1 and ~0 in pointer
+051o FAIL - "/properties/books/properties/%2520" - percent sign in subschema identifier, pointer uses percent encoding
+052o PASS - "/properties/books/properties/%20" - percent sign in subschema identifier
+060o PASS - "/properties/seasons/items/2" - use of array index in pointer
+061o PASS - "/properties/seasons/items/two" - string instead of index
+070o PASS - "/definitions/author/properties/colleague" - points to a recursive schema
+071o FAIL - "/definitions/author/properties/colleague/properties/colleague" - points to a recursive schema in second level

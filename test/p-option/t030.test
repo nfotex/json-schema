@@ -1,0 +1,4 @@
+program ../src/json-validate
+args -p /properties/books/properties/Kochbücher $srcdir/p-option/schema.json $srcdir/p-option/fits_subschema_cookbooks.json
+description "pointer contains ü"
+return 0

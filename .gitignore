@@ -1,0 +1,7 @@
+*~
+build/
+json-schema-*.tar.*
+cov-int/
+xcode/json-schema.xcodeproj/project.xcworkspace/xcshareddata
+xcode/json-schema.xcodeproj/project.xcworkspace/xcuserdata
+xcode/json-schema.xcodeproj/xcuserdata

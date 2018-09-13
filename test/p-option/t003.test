@@ -1,0 +1,4 @@
+program ../src/json-validate
+args -p "/" $srcdir/p-option/schema.json $srcdir/p-option/fits_type_string.json
+description "pointer to the empty string subschema"
+return 0

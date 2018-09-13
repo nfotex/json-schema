@@ -1,0 +1,4 @@
+program ../src/json-validate
+args -p /properties/seasons/items/1 $srcdir/p-option/schema.json $srcdir/p-option/fits_subschema_summer.json
+description "use of array index in pointer"
+return 0
