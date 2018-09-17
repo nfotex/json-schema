@@ -35,6 +35,6 @@ script:
 notifications:
   email:
     recipients:
-      - build-status@libzip.org
+      - dillo@nih.at,tk@giga.or.at
     on_success: change
     on_failure: change
