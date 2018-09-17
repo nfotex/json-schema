@@ -14,7 +14,7 @@ before_install:
    fi
 
 install:
-  - if [ "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
+  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 addons:
   apt:
     sources:
@@ -25,7 +25,7 @@ addons:
       - gcc-4.8
       - g++-4.8
       - clang
-      - jsoncpp
+      - libjsoncpp-dev
 script:
  - mkdir build
  - cd build
