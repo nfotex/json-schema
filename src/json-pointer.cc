@@ -104,7 +104,11 @@ int main(int argc, char *argv[]) {
 
     Json::Value source;
     Json::Reader reader;
-    reader.parse(input, source);
+    if (!reader.parse(input, source)) {
+        fprintf(stderr, "%s", reader.getFormattedErrorMessages().c_str());
+        exit(1);
+    }
+    
     Json::Value result;
     try {
         result = pointer.get(source);

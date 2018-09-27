@@ -34,6 +34,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include <exception>
+
 #include <json/URI.h>
 
 int main(int argc, char **argv) {
@@ -59,10 +61,17 @@ int main(int argc, char **argv) {
         }
     }
     else {
-        Json::URI reference(argv[2]);
-        auto resolved = base.resolve(reference);
+        try {
+            Json::URI reference(argv[2]);
+            auto resolved = base.resolve(reference);
+            
+            printf("%s\n", resolved.get_uri().c_str());
+        }
+        catch (std::exception e) {
+            fprintf(stderr, "%s: can't create URL: %s\n", argv[0], e.what());
+            exit(1);
 
-        printf("%s\n", resolved.get_uri().c_str());
+        }
     }
 
     exit(0);
