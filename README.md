@@ -12,5 +12,7 @@ distribution site:
 The latest version can always be found there.  The official repository
 is at [github](https://github.com/nfotex/json-schema/).
 
+If you want to reach the authors in private, use <json-schema@nfotex.com>.
+
 [![Travis Build Status](https://travis-ci.com/nfotex/json-schema.svg?branch=master)](https://travis-ci.com/nfotex/json-schema)
 [![Coverity Status](https://scan.coverity.com/projects/16750/badge.svg)](https://scan.coverity.com/projects/nfotex-json-schema)
