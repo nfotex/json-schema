@@ -68,9 +68,7 @@ void usage(const char *prg, bool error) {
 int main(int argc, char *argv[]) {
     std::string document;
     std::string pointer;
-    
-    bool use_old = false;
-    
+
     int c;
     while ((c = getopt(argc, argv, "hp:")) != EOF) {
         switch (c) {
@@ -118,6 +116,10 @@ int main(int argc, char *argv[]) {
         for (std::vector<Json::SchemaValidator::Error>::const_iterator it = e.errors.begin(); it != e.errors.end(); ++it) {
             fprintf(stderr, "%s:%s: %s\n", document_file.c_str(), it->path.c_str(), it->message.c_str());
         }
+        exit(1);
+    }
+    catch (std::exception e) {
+        fprintf(stderr, "%s: can't create validator: %s\n", argv[0], e.what());
         exit(1);
     }
     
