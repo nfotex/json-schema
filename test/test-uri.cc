@@ -44,7 +44,15 @@ int main(int argc, char **argv) {
         exit(1);
     }
 
-    Json::URI base(argv[1]);
+    Json::URI base;
+    try {
+        base = Json::URI(argv[1]);
+    }
+    catch (std::exception e) {
+        fprintf(stderr, "%s: can't create URL: %s\n", argv[1], e.what());
+        exit(1);
+    }
+
     if (argc == 2) {
         if (base.has_scheme()) {
             printf("scheme: %s\n", base.get_scheme().c_str());
@@ -68,9 +76,8 @@ int main(int argc, char **argv) {
             printf("%s\n", resolved.get_uri().c_str());
         }
         catch (std::exception e) {
-            fprintf(stderr, "%s: can't create URL: %s\n", argv[0], e.what());
+            fprintf(stderr, "%s: can't create URL: %s\n", argv[2], e.what());
             exit(1);
-
         }
     }
 
