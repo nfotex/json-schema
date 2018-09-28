@@ -112,11 +112,10 @@ static void ReplaceFirstSubstringAfterOffset(std::string* str,
 
   if (find_this.empty())
       return;
-  for (std::string::size_type offs(str->find(find_this, start_offset));
-       offs != std::string::npos; offs = str->find(find_this, offs)) {
+    
+  auto offs = str->find(find_this, start_offset);
+  if (offs != std::string::npos) {
     str->replace(offs, find_this.length(), replace_with);
-
-    break;
   }
 }
 
