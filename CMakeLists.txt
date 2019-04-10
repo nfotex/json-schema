@@ -50,7 +50,7 @@ ADD_DEPENDENCIES(distcheck dist)
 PKG_CHECK_MODULES(JSONCPP REQUIRED jsoncpp)
 PKG_CHECK_MODULES(PCRECPP REQUIRED libpcrecpp)
 
-OPTION(BUILD_SHARED_LIBS "Build shared libraries" ON)
+OPTION(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 
 # Testing
 ENABLE_TESTING()
