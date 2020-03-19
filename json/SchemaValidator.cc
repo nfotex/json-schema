@@ -1,7 +1,7 @@
 /*
     SchemaValidator.cc -- apply JSON Schema
     Copyright 2010 The Chromium Authors. All rights reserved.
-    Copyright 2015-2018 nfotex IT DL GmbH.
+    Copyright 2015-2020 nfotex IT DL GmbH.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions
@@ -523,34 +523,63 @@ std::vector<SchemaValidator::Error> SchemaValidator::errors(std::string prefix) 
   return prefixed_errors;
 }
 
-
 bool SchemaValidator::validate(const Json::Value &instance) {
+  return validate(instance, errors_);
+}
+
+bool SchemaValidator::validate(const Json::Value &instance, std::vector<Error> &errors) const {
   /// \todo fix non-relative $ref
   /// \todo walk schema and record all ids in types_
   /// \todo get rid of asserts (CHECK)?
 #ifdef JSON_DEBUG_REF
   printf("validate: root: %p, schema: %p, instance %p\n", &refs_root_, schema_root_, &instance);
 #endif
-  errors_.clear();
-  Validate(instance, *schema_root_, "/");
-  return errors_.size() == 0;
+  ValidationContext context(errors);
+  
+  Validate(instance, *schema_root_, "/", ExpansionOptions(), &context);
+  return errors.empty();
+}
+
+bool SchemaValidator::validate_and_expand(Json::Value &instance, const ExpansionOptions &options) {
+  return validate_and_expand(instance, options , errors_);
+}
+
+bool SchemaValidator::validate_and_expand(Json::Value &instance, const ExpansionOptions &options, std::vector<Error> &errors) const {
+  ValidationContext context(errors);
+  
+  Validate(instance, *schema_root_, "/", options, &context);
+  
+  if (errors.empty()) {
+    for (auto add_value : context.add_values) {
+      Json::Value *parent = const_cast<Json::Value *>(add_value.parent);
+      (*parent)[add_value.name] = *(add_value.value);
+    }
+  }
+  return errors.empty();
 }
 
 
-bool SchemaValidator::isValid(const Json::Value &instance, const Json::Value &schema) {
-  auto errors_before = errors_.size();
-  Validate(instance, schema, "");
-  auto ok = errors_.size() == errors_before;
-  errors_.resize(errors_before);
+bool SchemaValidator::isValid(const Json::Value &instance, const Json::Value &schema, const ExpansionOptions &options, ValidationContext *context) const {
+  auto errors_before = context->get_error_size();
+  auto add_values_before = context->get_add_values_size();
+  
+  Validate(instance, schema, "", options, context);
+  
+  auto ok = context->get_error_size() == errors_before;
+  
+  if (!ok) {
+    context->truncate_errors(errors_before);
+    context->truncate_add_values(add_values_before);
+  }
+  
   return ok;
 }
 
-void SchemaValidator::Validate(const Json::Value &instance,
-                               const Json::Value &schema,
-                               const std::string& path) {
+void SchemaValidator::Validate(const Json::Value &instance, const Json::Value &schema,
+const std::string& path, const ExpansionOptions &options, ValidationContext *context) const {
   if (schema.isBool()) {
       if (schema.asBool() == false) {
-        errors_.push_back(Error(path, kFalse));
+        context->add_error(Error(path, kFalse));
       }
       return;
   }
@@ -564,13 +593,13 @@ void SchemaValidator::Validate(const Json::Value &instance,
       printf("  (%p) unresolved ref %s\n", &schema, schema["$ref"].asCString());
 #endif
       // should not happen
-      errors_.push_back(Error(path, FormatErrorMessage(kUnknownTypeReference, schema["$ref"].asString())));
+      context->add_error(Error(path, FormatErrorMessage(kUnknownTypeReference, schema["$ref"].asString())));
     }
     else {
 #ifdef JSON_DEBUG_REF
       printf("  (%p) looking up ref %s -> %p\n", &schema, schema["$ref"].asCString(), it->second);
 #endif
-      Validate(instance, *(it->second), path);
+      Validate(instance, *(it->second), path, options, context);
     }
     return;
   }
@@ -578,7 +607,7 @@ void SchemaValidator::Validate(const Json::Value &instance,
   // If the schema has a choices property, the instance must validate against at
   // least one of the items in that array.
   if (schema.isMember("type")) {
-    if (!ValidateType(instance, schema["type"], path)) {
+    if (!ValidateType(instance, schema["type"], path, context)) {
       return;
     }
   }
@@ -587,7 +616,7 @@ void SchemaValidator::Validate(const Json::Value &instance,
     const Json::Value &schemata = schema["allOf"];
 
     for (Json::ArrayIndex i = 0; i < schemata.size(); i++) {
-      Validate(instance, schemata[i], path);
+      Validate(instance, schemata[i], path, options, context);
     }
   }
   if (schema.isMember("anyOf")) {
@@ -595,14 +624,16 @@ void SchemaValidator::Validate(const Json::Value &instance,
     bool ok = false;
     
     for (Json::ArrayIndex i = 0; i < schemata.size(); i++) {
-      if (isValid(instance, schemata[i])) {
+      if (isValid(instance, schemata[i], options, context)) {
         ok = true;
-        break;
+        if (!options.add_defaults) {
+          break;
+        }
       }
     }
 
     if (!ok) {
-      errors_.push_back(Error(path, kAnyOfFailed));
+      context->add_error(Error(path, kAnyOfFailed));
     }
   }
   if (schema.isMember("oneOf")) {
@@ -610,96 +641,95 @@ void SchemaValidator::Validate(const Json::Value &instance,
     size_t matched = 0;
     
     for (Json::ArrayIndex i = 0; i < schemata.size(); i++) {
-      if (isValid(instance, schemata[i])) {
+      if (isValid(instance, schemata[i], options, context)) {
         matched++;
       }
     }
     
     if (matched != 1) {
-      errors_.push_back(Error(path, kOneOfFailed));
+      context->add_error(Error(path, kOneOfFailed));
     }
   }
   if (schema.isMember("not")) {
-    if (isValid(instance, schema["not"])) {
-      errors_.push_back(Error(path, kNotFailed));
+    if (isValid(instance, schema["not"], ExpansionOptions(), context)) {
+      context->add_error(Error(path, kNotFailed));
     }
   }
 
   if (schema.isMember("if") && (schema.isMember("then") || schema.isMember("else"))) {
-    if (isValid(instance, schema["if"])) {
+    if (isValid(instance, schema["if"], ExpansionOptions(), context)) {
       if (schema.isMember("then")) {
-        Validate(instance, schema["then"], path);
+        Validate(instance, schema["then"], path, options, context);
       }
     }
     else {
       if (schema.isMember("else")) {
-        Validate(instance, schema["else"], path);
+        Validate(instance, schema["else"], path, options, context);
       }
     }
   }
 
   if (schema.isMember("const")) {
     if (instance != schema["const"]) {
-      errors_.push_back(Error(path, kConst));
+      context->add_error(Error(path, kConst));
     }
   }
   // If the schema has an enum property, the instance must be one of those
   // values.
   if (schema.isMember("enum")) {
-    ValidateEnum(instance, schema["enum"], path);
+    ValidateEnum(instance, schema["enum"], path, context);
     return;
   }
 
   if (instance.isNull() || instance.isBool())
     return;
   else if (instance.isObject())
-    ValidateObject(instance, schema, path);
+    ValidateObject(instance, schema, path, options, context);
   else if (instance.isArray())
-    ValidateArray(instance, schema, path);
+    ValidateArray(instance, schema, path, options, context);
   else if (instance.isString())
-    ValidateString(instance, schema, path);
+    ValidateString(instance, schema, path, context);
   else if (instance.isNumeric())
-    ValidateNumber(instance, schema, path);
+    ValidateNumber(instance, schema, path, context);
 }
 
-bool SchemaValidator::ValidateChoices(const Json::Value &instance,
-                                          const Json::Value &choices,
-                                          const std::string& path) {
-    size_t original_num_errors = errors_.size();
+bool SchemaValidator::ValidateChoices(const Json::Value &instance, const Json::Value &choices,
+const std::string& path, ValidationContext *context) const {
+  size_t original_num_errors = context->get_error_size();
 
     for (Json::Value::ArrayIndex i = 0; i < choices.size(); ++i) {
-        if (ValidateSimpleType(instance, choices[i].asString(), path)) {
+        if (ValidateSimpleType(instance, choices[i].asString(), path, context)) {
             return true;
         }
         // We discard the error from each choice. We only want to know if any of the
         // validations succeeded.
-        errors_.resize(original_num_errors);
+      context->truncate_add_values(original_num_errors);
     }
 
     // TODO: better error message
     // Now add a generic error that no choices matched.
-    errors_.push_back(Error(path, kInvalidChoice));
+    context->add_error(Error(path, kInvalidChoice));
     return false;
 }
 
-void SchemaValidator::ValidateEnum(const Json::Value &instance,
-                                       const Json::Value &choices,
-                                       const std::string& path) {
+void SchemaValidator::ValidateEnum(const Json::Value &instance, const Json::Value &choices,
+const std::string& path, ValidationContext *context) const {
   for (Json::Value::ArrayIndex i = 0; i < choices.size(); ++i) {
     if (choices[i] == instance) {
       return;
     }
   }
 
-  errors_.push_back(Error(path, kInvalidEnum));
+  context->add_error(Error(path, kInvalidEnum));
 }
 
-void SchemaValidator::ValidateObject(const Json::Value &instance, const Json::Value &schema, const std::string& path) {
+void SchemaValidator::ValidateObject(const Json::Value &instance, const Json::Value &schema,
+const std::string& path, const ExpansionOptions &options, ValidationContext *context) const {
   if (schema.isMember("required")) {
     const Json::Value &required = schema["required"];
     for (Json::ArrayIndex i = 0; i < required.size(); i++) {
       if (!instance.isMember(required[i].asString())) {
-        errors_.push_back(Error(path, FormatErrorMessage(kObjectPropertyIsRequired, required[i].asString())));
+        context->add_error(Error(path, FormatErrorMessage(kObjectPropertyIsRequired, required[i].asString())));
       }
     }
   }
@@ -708,7 +738,7 @@ void SchemaValidator::ValidateObject(const Json::Value &instance, const Json::Va
     Json::UInt64 count = schema["minProperties"].asUInt();
     
     if (instance.size() < count) {
-      errors_.push_back(Error(path, FormatErrorMessage(kObjectMinProperties, UIntToString(count))));
+      context->add_error(Error(path, FormatErrorMessage(kObjectMinProperties, UIntToString(count))));
     }
   }
 
@@ -716,7 +746,7 @@ void SchemaValidator::ValidateObject(const Json::Value &instance, const Json::Va
     Json::UInt64 count = schema["maxProperties"].asUInt();
     
     if (instance.size() > count) {
-      errors_.push_back(Error(path, FormatErrorMessage(kObjectMaxProperties, UIntToString(count))));
+      context->add_error(Error(path, FormatErrorMessage(kObjectMaxProperties, UIntToString(count))));
     }
   }
 
@@ -739,27 +769,28 @@ void SchemaValidator::ValidateObject(const Json::Value &instance, const Json::Va
     auto child_path = path_add(path, name);
 
     if (property_names != NULL) {
-      Validate(name, *property_names, child_path);
+      auto name_value = Json::Value(name);
+      Validate(name_value, *property_names, child_path, ExpansionOptions(), context);
     }
 
     if (properties && properties->isMember(name)) {
-      Validate(child, (*properties)[name], child_path);
+      Validate(child, (*properties)[name], child_path, options, context);
       checked = true;
     }
 
     for (auto pair : pattern_properties) {
       if (pair.first.PartialMatch(name)) {
-        Validate(child, *(pair.second), child_path);
+        Validate(child, *(pair.second), child_path, options, context);
         checked = true;
       }
     }
 
     if (!checked && additional_properties != NULL) {
       if (additional_properties->isBool() && additional_properties->asBool() == false) {
-        errors_.push_back(Error(child_path, kUnexpectedProperty));
+        context->add_error(Error(child_path, kUnexpectedProperty));
       }
       else {
-        Validate(child, *additional_properties, child_path);
+        Validate(child, *additional_properties, child_path, options, context);
       }
     }
 
@@ -768,32 +799,54 @@ void SchemaValidator::ValidateObject(const Json::Value &instance, const Json::Va
       if (dependency.isArray()) {
         for (auto dependency_name : dependency) {
           if (!instance.isMember(dependency_name.asString())) {
-            errors_.push_back(Error(path, FormatErrorMessage(kObjectPropertyIsRequired, dependency_name.asString())));
+            context->add_error(Error(path, FormatErrorMessage(kObjectPropertyIsRequired, dependency_name.asString())));
           }
         }
       }
       else {
-        Validate(instance, dependency, path);
+        Validate(instance, dependency, path, ExpansionOptions(), context);
+      }
+    }
+  }
+  
+  if (options.add_defaults && properties != NULL) {
+    for (auto name : properties->getMemberNames()) {
+      if (!instance.isMember(name)) {
+        const Json::Value *property = &(*properties)[name];
+
+        if (property->isMember("$ref")) {
+          auto it = refs.find(property);
+          if (it == refs.end()) {
+            continue;
+          }
+          else {
+            property = it->second;
+          }
+        }
+        if (property->isMember("default")) {
+          context->add_value(instance, name, (*property)["default"]);
+        }
       }
     }
   }
 }
 
-void SchemaValidator::ValidateArray(const Json::Value &instance, const Json::Value &schema, const std::string& path) {
+void SchemaValidator::ValidateArray(const Json::Value &instance, const Json::Value &schema,
+const std::string& path, const ExpansionOptions &options, ValidationContext *context) const {
   Json::ArrayIndex instance_size = instance.size();
 
   if (schema.isMember("minItems")) {
     int min_items = schema["minItems"].asInt();
 
     if (instance_size < static_cast<size_t>(min_items)) {
-      errors_.push_back(Error(path, FormatErrorMessage(kArrayMinItems, IntToString(min_items))));
+      context->add_error(Error(path, FormatErrorMessage(kArrayMinItems, IntToString(min_items))));
     }
   }
 
   if (schema.isMember("maxItems")) {
     int max_items = schema["maxItems"].asInt();
     if (instance_size > static_cast<size_t>(max_items)) {
-      errors_.push_back(Error(path, FormatErrorMessage(kArrayMaxItems, IntToString(max_items))));
+      context->add_error(Error(path, FormatErrorMessage(kArrayMaxItems, IntToString(max_items))));
     }
   }
   
@@ -805,14 +858,14 @@ void SchemaValidator::ValidateArray(const Json::Value &instance, const Json::Val
     if (items.isArray()) {
       items_size = items.size();
       for (Json::ArrayIndex i = 0; i < items_size && i < instance_size; ++i) {
-        Validate(instance[i], items[i], path_add(path, UIntToString(i)));
+        Validate(instance[i], items[i], path_add(path, UIntToString(i)), options, context);
       }
     }
     else {
       // If the items property is a single schema, each item in the array must
       // validate against that schema.
       for (Json::ArrayIndex i = 0; i < instance_size; ++i) {
-        Validate(instance[i], items, path_add(path, UIntToString(i)));
+        Validate(instance[i], items, path_add(path, UIntToString(i)), options, context);
       }
       return;
     }
@@ -823,12 +876,12 @@ void SchemaValidator::ValidateArray(const Json::Value &instance, const Json::Val
       
         if (additional.isBool()) {
           if (!additional.asBool()) {
-            errors_.push_back(Error(path, kNoAdditionalItems));
+            context->add_error(Error(path, kNoAdditionalItems));
           }
         }
         else {
           for (Json::ArrayIndex i = items_size; i < instance_size; ++i) {
-            Validate(instance[i], additional, path_add(path, UIntToString(i)));
+            Validate(instance[i], additional, path_add(path, UIntToString(i)), options, context);
           }
         }
       }
@@ -839,7 +892,7 @@ void SchemaValidator::ValidateArray(const Json::Value &instance, const Json::Val
     for (Json::ArrayIndex i=0; i<instance.size(); i++) {
       for (Json::ArrayIndex j=i+1; j<instance.size(); j++) {
         if (instance[i] == instance[j])
-          errors_.push_back(Error(path, kArrayItemsNotUnique));
+          context->add_error(Error(path, kArrayItemsNotUnique));
       }
     }
   }
@@ -849,21 +902,20 @@ void SchemaValidator::ValidateArray(const Json::Value &instance, const Json::Val
     const Json::Value &contains_schema = schema["contains"];
 
     for (auto item : instance) {
-      if (isValid(item, contains_schema)) {
+      if (isValid(item, contains_schema, ExpansionOptions(), context)) {
         ok = true;
         break;
       }
     }
 
     if (!ok) {
-      errors_.push_back(Error(path, kArrayContains));
+      context->add_error(Error(path, kArrayContains));
     }
   }
 }
 
-void SchemaValidator::ValidateString(const Json::Value &instance,
-                                         const Json::Value &schema,
-                                         const std::string& path) {
+void SchemaValidator::ValidateString(const Json::Value &instance, const Json::Value &schema,
+const std::string& path, ValidationContext *context) const {
   const std::string &value = instance.asString();
 
   if (schema.isMember("minLength") || schema.isMember("maxLength")) {
@@ -872,24 +924,24 @@ void SchemaValidator::ValidateString(const Json::Value &instance,
     if (schema.isMember("minLength")) {
       int min_length = schema["minLength"].asInt();
       if (min_length < 0) {
-        errors_.push_back(Error(path, FormatErrorMessage(kNotNegative, "minLength")));
+        context->add_error(Error(path, FormatErrorMessage(kNotNegative, "minLength")));
         return;
       }
 
       if (length < static_cast<size_t>(min_length)) {
-        errors_.push_back(Error(path, FormatErrorMessage(kStringMinLength, IntToString(min_length))));
+        context->add_error(Error(path, FormatErrorMessage(kStringMinLength, IntToString(min_length))));
       }
     }
 
     if (schema.isMember("maxLength")) {
       int max_length = schema["maxLength"].asInt();
       if (max_length < 0) {
-        errors_.push_back(Error(path, FormatErrorMessage(kNotNegative, "maxLength")));
+        context->add_error(Error(path, FormatErrorMessage(kNotNegative, "maxLength")));
         return;
       }
 
       if (length > static_cast<size_t>(max_length)) {
-        errors_.push_back(Error(path, FormatErrorMessage(kStringMaxLength, IntToString(max_length))));
+        context->add_error(Error(path, FormatErrorMessage(kStringMaxLength, IntToString(max_length))));
       }
     }
   }
@@ -897,13 +949,12 @@ void SchemaValidator::ValidateString(const Json::Value &instance,
   if (schema.isMember("pattern")) {
     std::string pattern = schema["pattern"].asString();
     if (!pcrecpp::RE(pattern).PartialMatch(instance.asString()))
-      errors_.push_back(Error(path, FormatErrorMessage(kStringPattern, pattern)));
+      context->add_error(Error(path, FormatErrorMessage(kStringPattern, pattern)));
   }
 }
 
-void SchemaValidator::ValidateNumber(const Json::Value &instance,
-                                         const Json::Value &schema,
-                                         const std::string& path) {
+void SchemaValidator::ValidateNumber(const Json::Value &instance, const Json::Value &schema,
+const std::string& path, ValidationContext *context) const {
   double value = instance.asDouble();
 
   // TODO(aa): It would be good to test that the double is not infinity or nan,
@@ -913,7 +964,7 @@ void SchemaValidator::ValidateNumber(const Json::Value &instance,
     double minimum = schema["minimum"].asDouble();
 
     if (value < minimum) {
-      errors_.push_back(Error(path, FormatErrorMessage(kNumberMinimum, DoubleToString(minimum))));
+      context->add_error(Error(path, FormatErrorMessage(kNumberMinimum, DoubleToString(minimum))));
     }
   }
 
@@ -921,7 +972,7 @@ void SchemaValidator::ValidateNumber(const Json::Value &instance,
     double minimum = schema["exclusiveMinimum"].asDouble();
 
     if (value <= minimum) {
-      errors_.push_back(Error(path, FormatErrorMessage(kNumberExclusiveMinimum, DoubleToString(minimum))));
+      context->add_error(Error(path, FormatErrorMessage(kNumberExclusiveMinimum, DoubleToString(minimum))));
     }
   }
 
@@ -929,7 +980,7 @@ void SchemaValidator::ValidateNumber(const Json::Value &instance,
     double maximum = schema["maximum"].asDouble();
 
     if (value > maximum) {
-      errors_.push_back(Error(path, FormatErrorMessage(kNumberMaximum, DoubleToString(maximum))));
+      context->add_error(Error(path, FormatErrorMessage(kNumberMaximum, DoubleToString(maximum))));
     }
   }
 
@@ -937,7 +988,7 @@ void SchemaValidator::ValidateNumber(const Json::Value &instance,
     double maximum = schema["exclusiveMaximum"].asDouble();
 
     if (value >= maximum) {
-      errors_.push_back(Error(path, FormatErrorMessage(kNumberExclusiveMaximum, DoubleToString(maximum))));
+      context->add_error(Error(path, FormatErrorMessage(kNumberExclusiveMaximum, DoubleToString(maximum))));
     }
   }
 
@@ -945,48 +996,47 @@ void SchemaValidator::ValidateNumber(const Json::Value &instance,
     double divisor = schema["multipleOf"].asDouble();
     
     if (divisor != 0. && floor(value/divisor) != (value/divisor)) {
-      errors_.push_back(Error(path, FormatErrorMessage(
+      context->add_error(Error(path, FormatErrorMessage(
           kNumberDivisible, DoubleToString(divisor))));
     }
   }
 }
 
 bool SchemaValidator::ValidateType(const Json::Value &instance, const Json::Value& type,
-                                       const std::string& path) {
+const std::string& path, ValidationContext *context) const {
   if (type.isArray())
-    return ValidateChoices(instance, type, path);
+    return ValidateChoices(instance, type, path, context);
 
   std::string simple_type = type.asString();
   if (simple_type.empty()) {
-      errors_.push_back(Error(path, kEmptyType));
+      context->add_error(Error(path, kEmptyType));
       return false;
   }
-  return ValidateSimpleType(instance, simple_type, path);
+  return ValidateSimpleType(instance, simple_type, path, context);
 }
 
-bool SchemaValidator::ValidateSimpleType(const Json::Value &instance,
-                                             const std::string& expected_type,
-                                             const std::string& path) {
+bool SchemaValidator::ValidateSimpleType(const Json::Value &instance, const std::string& expected_type,
+const std::string& path, ValidationContext *context) const {
   std::string actual_type = GetSchemaType(instance);
   if (expected_type == actual_type ||
       (expected_type == "number" && actual_type == "integer")) {
     return true;
   } else {
-    errors_.push_back(Error(path, FormatErrorMessage(
+    context->add_error(Error(path, FormatErrorMessage(
         kInvalidType, expected_type, actual_type)));
     return false;
   }
 }
 
 
-std::string SchemaValidator::path_add(const std::string &path, const std::string &element) {
+std::string SchemaValidator::path_add(const std::string &path, const std::string &element) const {
     if (path.length() != 1) {
         return path + "/" + element;
     }
     return path + element;
 }
 
-size_t SchemaValidator::count_utf8_characters(const std::string &str) {
+size_t SchemaValidator::count_utf8_characters(const std::string &str) const {
   size_t length = 0;
   
   for (size_t i = 0; i < str.length(); i++) {

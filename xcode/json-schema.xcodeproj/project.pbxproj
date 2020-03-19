@@ -153,7 +153,7 @@
 		4B128BCD2147E556003BFAB1 /* URI.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = URI.cc; sourceTree = "<group>"; };
 		4B128BCE2147E556003BFAB1 /* URI.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = URI.h; sourceTree = "<group>"; };
 		4B128BCF2147E556003BFAB1 /* SchemaValidator.cc */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; path = SchemaValidator.cc; sourceTree = "<group>"; };
-		4B128BD02147E556003BFAB1 /* SchemaValidator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = SchemaValidator.h; sourceTree = "<group>"; };
+		4B128BD02147E556003BFAB1 /* SchemaValidator.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.h; path = SchemaValidator.h; sourceTree = "<group>"; tabWidth = 8; };
 		4B128BD12147E556003BFAB1 /* meta-schema.cc */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = "meta-schema.cc"; sourceTree = "<group>"; };
 		4B128BD22147E556003BFAB1 /* convert-meta-schema.sh */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = "convert-meta-schema.sh"; sourceTree = "<group>"; };
 		4B128BDE2147E5C4003BFAB1 /* json-validate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "json-validate"; sourceTree = BUILT_PRODUCTS_DIR; };

@@ -1,7 +1,7 @@
 /*
     SchemaValidator.h -- apply JSON Schema
     Copyright 2010 The Chromium Authors. All rights reserved.
-    Copyright 2015-2018 nfotex IT DL GmbH.
+    Copyright 2015-2020 nfotex IT DL GmbH.
 
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions
@@ -61,6 +61,13 @@ class SchemaValidator {
     };
     
  public:
+  class ExpansionOptions {
+  public:
+      ExpansionOptions(bool add_defaults_ = false) : add_defaults(add_defaults_) { }
+      
+      bool add_defaults;
+  };
+  
   // Details about a validation error.
   struct Error {
     Error();
@@ -164,12 +171,60 @@ class SchemaValidator {
 
     std::vector<Error> errors(std::string prefix) const;
 
-  // Validates a JSON value. Returns true if the instance is valid, false
-  // otherwise. If false is returned any errors are available from the errors()
-  // getter.
+  /// Validates a JSON value. Returns true if the instance is valid, false
+  /// otherwise. If false is returned any errors are available from the errors()
+  /// getter.
   bool validate(const Json::Value &instance);
+    
+  /// Validates a JSON value and expand according to options.
+  ///  Returns true if the instance is valid, false otherwise.
+  ///  If false is returned any errors are available from the errors() getter.
+  bool validate_and_expand(Json::Value &instance, const ExpansionOptions &options);
+    
+  /// Validates a JSON value. Returns true if the instance is valid, false
+  /// otherwise. If false is returned any errors are returned in errors.
+  /// This variant is thread save: one validator can run multiple validations simultaneously.
+  bool validate(const Json::Value &instance, std::vector<Error> &errors) const;
+
+  /// Validates a JSON value and expand according to options.
+  ///  Returns true if the instance is valid, false otherwise.
+  ///  If false is returned any errors are returned in errors.
+  /// This variant is thread save: one validator can run multiple validations simultaneously.
+  bool validate_and_expand(Json::Value &instance, const ExpansionOptions &options, std::vector<Error> &errors) const;
 
  private:
+    struct AddValue {
+        const Json::Value *parent;
+        std::string name;
+        const Json::Value *value;
+        
+        AddValue() : parent(NULL), name(""), value(NULL) { }
+        AddValue(const Json::Value *parent_, const std::string &name_, const Json::Value *value_) : parent(parent_), name(name_), value(value_) { }
+    };
+    
+    struct ValidationContext {
+        std::vector<Error> *errors;
+        std::vector<AddValue> add_values;
+        
+        ValidationContext(std::vector<Error> &errors_) : errors(&errors_) {
+            errors->clear();
+        }
+        
+        void add_error(const Error &error) {
+            errors->push_back(error);
+        }
+        
+        void add_value(const Json::Value &parent, const std::string &name, const Json::Value &value) {
+            add_values.push_back(AddValue(&parent, name, &value));
+        }
+        
+        size_t get_error_size() const { return errors->size(); }
+        void truncate_errors(size_t size) { errors->resize(size); }
+
+        size_t get_add_values_size() const { return add_values.size(); }
+        void truncate_add_values(size_t size) { add_values.resize(size); }
+    };
+    
     static const std::string meta_schema;
     static Json::Value meta_schema_root;
     static SchemaValidator *meta_validator;
@@ -188,59 +243,59 @@ class SchemaValidator {
   // every node in the instance tree, and it just decides which of the more
   // detailed methods to call.
   void Validate(const Json::Value &instance, const Json::Value &schema,
-                const std::string& path);
+                const std::string& path, const ExpansionOptions &options, ValidationContext *context) const;
 
   // Validate, but does not keep errors
-  bool isValid(const Json::Value &instance, const Json::Value &schema);
+  bool isValid(const Json::Value &instance, const Json::Value &schema, const ExpansionOptions &options, ValidationContext *context) const;
 
   // Validates a node against a list of possible schemas. If any one of the
   // schemas match, the node is valid.
   bool ValidateChoices(const Json::Value &instance, const Json::Value &choices,
-                       const std::string& path);
+                       const std::string& path, ValidationContext *context) const;
 
   // Validates a node against a list of exact primitive values, eg 42, "foobar".
   void ValidateEnum(const Json::Value &instance, const Json::Value &choices,
-                    const std::string& path);
+                    const std::string& path, ValidationContext *context) const;
 
   // Validates a JSON object against an object schema node.
   void ValidateObject(const Json::Value &instance, const Json::Value &schema,
-                      const std::string& path);
+                      const std::string& path, const ExpansionOptions &options, ValidationContext *context) const;
 
   // Validates a JSON array against an array schema node.
   void ValidateArray(const Json::Value &instance, const Json::Value &schema,
-                     const std::string& path);
+                     const std::string& path, const ExpansionOptions &options, ValidationContext *context) const;
 
   // Validates a JSON array against an array schema node configured to be a
   // tuple. In a tuple, there is one schema node for each item expected in the
   // array.
   void ValidateTuple(const Json::Value &instance, const Json::Value &schema,
-                     const std::string& path);
+                     const std::string& path, ValidationContext *context) const;
 
   /// Validate a JSON string against a string schema node.
   void ValidateString(const Json::Value &instance, const Json::Value &schema,
-                      const std::string& path);
+                      const std::string& path, ValidationContext *context) const;
 
   /// Validate a JSON number against a number schema node.
   void ValidateNumber(const Json::Value &instance, const Json::Value &schema,
-                      const std::string& path);
+                      const std::string& path, ValidationContext *context) const;
 
   /// Validates that the JSON node |instance| conforms to |type|.
   bool ValidateType(const Json::Value &instance, const Json::Value& type,
-                    const std::string& path);
+                    const std::string& path, ValidationContext *context) const;
 
   /// Validates that the JSON node |instance| has |expected_type|.
   bool ValidateSimpleType(const Json::Value &instance, const std::string& expected_type,
-                          const std::string& path);
+                          const std::string& path, ValidationContext *context) const;
 
   /// Returns true if |schema| will allow additional items of any type.
   bool SchemaAllowsAnyAdditionalItems(
-      const Json::Value &schema, Json::Value* addition_items_schema, const std::string& name);
+      const Json::Value &schema, Json::Value* addition_items_schema, const std::string& name) const;
 
   void collect_ids_refs(const Json::Value &node, URI base_uri, bool process_refs);
 
   const Json::Value &get_ref(const std::string &ref);
-  std::string path_add(const std::string &path, const std::string &element);
-  size_t count_utf8_characters(const std::string &str);
+  std::string path_add(const std::string &path, const std::string &element) const;
+  size_t count_utf8_characters(const std::string &str) const;
 
   // members that contain sub-schemata
   static const std::vector<std::string> schema_member_names;

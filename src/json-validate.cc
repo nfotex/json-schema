@@ -1,6 +1,6 @@
 /*
     json-validate.cc -- validate a JSON document against a JSON Schema
-    Copyright 2015-2018 nfotex IT DL GmbH.
+    Copyright 2015-2020 nfotex IT DL GmbH.
  
     Redistribution and use in source and binary forms, with or without
     modification, are permitted provided that the following conditions
@@ -59,7 +59,7 @@ std::string read_stdin() {
 void usage(const char *prg, bool error) {
     FILE *f = error ? stderr : stdout;
     
-    fprintf(f, "usage: %s [-h] [-p schema-pointer] schema [json]\n", prg);
+    fprintf(f, "usage: %s [-h] [-D] [-p schema-pointer] schema [json]\n", prg);
     
     exit(error ? 1 : 0);
     
@@ -68,10 +68,15 @@ void usage(const char *prg, bool error) {
 int main(int argc, char *argv[]) {
     std::string document;
     std::string pointer;
+    auto add_defaults = false;
 
     int c;
-    while ((c = getopt(argc, argv, "hp:")) != EOF) {
+    while ((c = getopt(argc, argv, "Dhp:")) != EOF) {
         switch (c) {
+            case 'D':
+                add_defaults = true;
+                break;
+                
             case 'p':
                 pointer = optarg;
                 break;
@@ -135,13 +140,27 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
 
-    if (!validator->validate(root)) {
-        const std::vector<Json::SchemaValidator::Error> errors = validator->errors();
-        
+    std::vector<Json::SchemaValidator::Error> errors;
+    bool ok;
+    
+    if (add_defaults) {
+        ok = validator->validate_and_expand(root, true, errors);
+    }
+    else {
+        ok = validator->validate(root, errors);
+    }
+
+    if (!ok) {
         for (std::vector<Json::SchemaValidator::Error>::const_iterator it = errors.begin(); it != errors.end(); ++it) {
             fprintf(stderr, "%s:%s: %s\n", document_file.c_str(), it->path.c_str(), it->message.c_str());
         }
         exit(1);
+    }
+    
+    if (add_defaults) {
+        Json::StyledWriter writer;
+        
+        printf("%s", writer.write(root).c_str());
     }
     
     exit(0);
