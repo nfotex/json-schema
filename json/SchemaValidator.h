@@ -184,13 +184,13 @@ class SchemaValidator {
   /// Validates a JSON value. Returns true if the instance is valid, false
   /// otherwise. If false is returned any errors are returned in errors.
   /// This variant is thread save: one validator can run multiple validations simultaneously.
-  bool validate(const Json::Value &instance, std::vector<Error> &errors) const;
+  bool validate(const Json::Value &instance, std::vector<Error> *errors) const;
 
   /// Validates a JSON value and expand according to options.
   ///  Returns true if the instance is valid, false otherwise.
   ///  If false is returned any errors are returned in errors.
   /// This variant is thread save: one validator can run multiple validations simultaneously.
-  bool validate_and_expand(Json::Value &instance, const ExpansionOptions &options, std::vector<Error> &errors) const;
+  bool validate_and_expand(Json::Value &instance, const ExpansionOptions &options, std::vector<Error> *errors) const;
 
  private:
     struct AddValue {
@@ -206,7 +206,7 @@ class SchemaValidator {
         std::vector<Error> *errors;
         std::vector<AddValue> add_values;
         
-        ValidationContext(std::vector<Error> &errors_) : errors(&errors_) {
+        ValidationContext(std::vector<Error> *errors_) : errors(errors_) {
             errors->clear();
         }
         
@@ -223,6 +223,8 @@ class SchemaValidator {
 
         size_t get_add_values_size() const { return add_values.size(); }
         void truncate_add_values(size_t size) { add_values.resize(size); }
+        
+        bool is_valid() const { return errors->empty(); }
     };
     
     static const std::string meta_schema;
@@ -293,7 +295,7 @@ class SchemaValidator {
 
   void collect_ids_refs(const Json::Value &node, URI base_uri, bool process_refs);
 
-  const Json::Value &get_ref(const std::string &ref);
+  const Json::Value *resolve_ref(const Json::Value *schema) const;
   std::string path_add(const std::string &path, const std::string &element) const;
   size_t count_utf8_characters(const std::string &str) const;
 

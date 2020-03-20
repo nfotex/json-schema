@@ -144,10 +144,10 @@ int main(int argc, char *argv[]) {
     bool ok;
     
     if (add_defaults) {
-        ok = validator->validate_and_expand(root, true, errors);
+        ok = validator->validate_and_expand(root, true, &errors);
     }
     else {
-        ok = validator->validate(root, errors);
+        ok = validator->validate(root, &errors);
     }
 
     if (!ok) {

@@ -524,10 +524,10 @@ std::vector<SchemaValidator::Error> SchemaValidator::errors(std::string prefix) 
 }
 
 bool SchemaValidator::validate(const Json::Value &instance) {
-  return validate(instance, errors_);
+  return validate(instance, &errors_);
 }
 
-bool SchemaValidator::validate(const Json::Value &instance, std::vector<Error> &errors) const {
+bool SchemaValidator::validate(const Json::Value &instance, std::vector<Error> *errors) const {
   /// \todo fix non-relative $ref
   /// \todo walk schema and record all ids in types_
   /// \todo get rid of asserts (CHECK)?
@@ -537,25 +537,25 @@ bool SchemaValidator::validate(const Json::Value &instance, std::vector<Error> &
   ValidationContext context(errors);
   
   Validate(instance, *schema_root_, "/", ExpansionOptions(), &context);
-  return errors.empty();
+  return context.is_valid();
 }
 
 bool SchemaValidator::validate_and_expand(Json::Value &instance, const ExpansionOptions &options) {
-  return validate_and_expand(instance, options , errors_);
+  return validate_and_expand(instance, options , &errors_);
 }
 
-bool SchemaValidator::validate_and_expand(Json::Value &instance, const ExpansionOptions &options, std::vector<Error> &errors) const {
+bool SchemaValidator::validate_and_expand(Json::Value &instance, const ExpansionOptions &options, std::vector<Error> *errors) const {
   ValidationContext context(errors);
   
   Validate(instance, *schema_root_, "/", options, &context);
   
-  if (errors.empty()) {
+  if (context.is_valid()) {
     for (auto add_value : context.add_values) {
       Json::Value *parent = const_cast<Json::Value *>(add_value.parent);
       (*parent)[add_value.name] = *(add_value.value);
     }
   }
-  return errors.empty();
+  return context.is_valid();
 }
 
 
@@ -587,8 +587,8 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
   // If the schema has a $ref property, the instance must validate against
   // that schema. It must be present in types_ to be referenced.
   if (schema.isMember("$ref")) {
-    auto it = refs.find(&schema);
-    if (it == refs.end()) {
+    auto real_schema = resolve_ref(&schema);
+    if (real_schema == NULL) {
 #ifdef JSON_DEBUG_REF
       printf("  (%p) unresolved ref %s\n", &schema, schema["$ref"].asCString());
 #endif
@@ -597,9 +597,9 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
     }
     else {
 #ifdef JSON_DEBUG_REF
-      printf("  (%p) looking up ref %s -> %p\n", &schema, schema["$ref"].asCString(), it->second);
+      printf("  (%p) looking up ref %s -> %p\n", &schema, schema["$ref"].asCString(), real_schema);
 #endif
-      Validate(instance, *(it->second), path, options, context);
+      Validate(instance, *real_schema, path, options, context);
     }
     return;
   }
@@ -697,19 +697,19 @@ bool SchemaValidator::ValidateChoices(const Json::Value &instance, const Json::V
 const std::string& path, ValidationContext *context) const {
   size_t original_num_errors = context->get_error_size();
 
-    for (Json::Value::ArrayIndex i = 0; i < choices.size(); ++i) {
-        if (ValidateSimpleType(instance, choices[i].asString(), path, context)) {
-            return true;
-        }
-        // We discard the error from each choice. We only want to know if any of the
-        // validations succeeded.
-      context->truncate_add_values(original_num_errors);
+  for (Json::Value::ArrayIndex i = 0; i < choices.size(); ++i) {
+    if (ValidateSimpleType(instance, choices[i].asString(), path, context)) {
+      return true;
     }
-
-    // TODO: better error message
-    // Now add a generic error that no choices matched.
-    context->add_error(Error(path, kInvalidChoice));
-    return false;
+    // We discard the error from each choice. We only want to know if any of the
+    // validations succeeded.
+    context->truncate_errors(original_num_errors);
+  }
+  
+  // TODO: better error message
+  // Now add a generic error that no choices matched.
+  context->add_error(Error(path, kInvalidChoice));
+  return false;
 }
 
 void SchemaValidator::ValidateEnum(const Json::Value &instance, const Json::Value &choices,
@@ -814,13 +814,10 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
       if (!instance.isMember(name)) {
         const Json::Value *property = &(*properties)[name];
 
-        if (property->isMember("$ref")) {
-          auto it = refs.find(property);
-          if (it == refs.end()) {
+        while (property->isMember("$ref")) {
+          property = resolve_ref(property);
+          if (property == NULL) {
             continue;
-          }
-          else {
-            property = it->second;
           }
         }
         if (property->isMember("default")) {
@@ -1026,6 +1023,17 @@ const std::string& path, ValidationContext *context) const {
         kInvalidType, expected_type, actual_type)));
     return false;
   }
+}
+
+
+const Json::Value *SchemaValidator::resolve_ref(const Json::Value *schema) const {
+  auto it = refs.find(schema);
+  
+  if (it == refs.end()) {
+    return NULL;
+  }
+  
+  return it->second;
 }
 
 
