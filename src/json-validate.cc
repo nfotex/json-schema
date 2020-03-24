@@ -32,8 +32,10 @@
 */
 
 
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <unistd.h>
 
 #include <string>
@@ -46,6 +48,10 @@
 
 std::string read_file(const std::string &filename) {
     std::ifstream t(filename.c_str());
+    if (!t.is_open()) {
+        fprintf(stderr, "can't open '%s': %s\n", filename.c_str(), strerror(errno));
+        exit(1);
+    }
     std::string str((std::istreambuf_iterator<char>(t)), std::istreambuf_iterator<char>());
     return str;
 }
