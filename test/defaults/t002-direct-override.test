@@ -1,0 +1,10 @@
+description "property inside object, default value inserted"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t002-direct-override.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "direct" : {
+stdout       "value" : "myValue"
+stdout    }
+stdout }

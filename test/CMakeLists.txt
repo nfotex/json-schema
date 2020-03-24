@@ -19,6 +19,12 @@ ADD_CUSTOM_TARGET(cleanup
   )
 
 SET(EXTRA_TESTS
+  defaults/t001-direct.test
+  defaults/t002-direct-override.test
+  defaults/t003-fail.test
+  defaults/t004-in-object.test
+  defaults/t005-in-array.test
+  defaults/t006-reference.test
   p-option/t001.test
   p-option/t002.test
   p-option/t003.test

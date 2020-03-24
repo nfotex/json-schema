@@ -179,7 +179,7 @@ sub new {
 	$self->{hooks} = {};
 
 	$self->get_variable('srcdir', $opts);
-	$self->get_variable('top_builddir', $opts);
+	$self->get_variable('top_builddir', $opts, ['CMAKE_BINARY_DIR']);
 
 	$self->{in_sandbox} = 0;
 
@@ -764,24 +764,31 @@ sub get_extension {
 
 
 sub get_variable {
-	my ($self, $name, $opts) = @_;
+	my ($self, $name, $opts, $aliases) = @_;
 
-	$self->{$name} = $opts->{$name} // $ENV{$name};
-	if (!defined($self->{$name}) || $self->{$name} eq '') {
+    $self->{$name} = $opts->{$name} // $ENV{$name};
+	
+    if (!defined($self->{$name}) || $self->{$name} eq '') {
+        my %keys = ($name => 1);
+        for my $key (@$aliases) {
+            $keys{$key} = 1;
+        }
 		my $fh;
 		unless (open($fh, '<', 'Makefile')) {
 			$self->die("cannot open Makefile: $!");
 		}
 		while (my $line = <$fh>) {
 			chomp $line;
-			if ($line =~ m/^$name = (.*)/) {
-				$self->{$name} = $1;
-				last;
+			if ($line =~ m/^([A-Za-z0-9_]+) = (.*)/) {
+                if ($keys{$1}) {
+                    $self->{$name} = $1;
+                    last;
+                }
 			}
 		}
 		close ($fh);
 	}
-	if (!defined($self->{$name} || $self->{$name} eq '')) {
+	if (!defined($self->{$name}) || $self->{$name} eq '') {
 		$self->die("cannot get variable $name");
 	}
 }

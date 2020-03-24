@@ -1,0 +1,97 @@
+{
+    "definitions": {
+        "integer42": { "type": "integer", "default": 42 }
+    },
+    "type": "object",
+    "properties": {
+        "allOf": {
+            "type": "object",
+            "allOf": [
+                {
+                    "properties": {
+                        "integer": { "type": "integer", "default": 42 }
+                    }
+                },
+                {
+                    "properties": {
+                        "boolean": { "type": "boolean", "default": true }
+                    }
+                },
+                    {
+                        "properties": {
+                            "string": { "type": "string", "default": "none" }
+                    }
+                }
+            ]
+        },
+        "direct": {
+            "type": "object",
+            "properties": {
+                "valid": { "type": "boolean" },
+                "value": { "type": "string", "default": "defaultValue" }
+
+            }
+        },
+        "fail": false,
+        "if": {
+            "type": "object",
+            "if": {
+                "requred": [ "condition" ],
+                "properties": {
+                    "condition": { "enum": [ true] }
+                }
+            },
+            "then": {
+                "properties": {
+                    "branch": { "default": true }
+                }
+            },
+            "else": {
+                "properties": {
+                    "branch": { "default": false }
+                }
+            }
+        },
+        "inArray": {
+            "type": "array",
+            "items": { "$ref": "#" }
+        },
+        "inObject": { "$ref": "#" },
+        "oneOf": {
+            "type": "object",
+            "required": [ "type" ],
+            "oneOf": [
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "type": "string" },
+                        "value": { "type": "string", "default": "string" },
+                        "string": { "default": "defaultString" }
+                    }
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "type": "integer" },
+                        "value": { "type": "string", "default": "integer" },
+                        "integer": { "default": 42 }
+                    }
+                },
+                {
+                    "type": "object",
+                    "properties": {
+                        "type": { "type": "boolean" },
+                        "value": { "type": "string", "default": "boolean" },
+                        "boolean": { "default": true }
+                    }
+                }
+            ]
+        },
+        "reference": {
+            "type": "object",
+            "properties": {
+                "integer": { "$ref": "#/definitions/integer42" }
+            }
+        }
+    }
+}

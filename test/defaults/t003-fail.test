@@ -1,0 +1,6 @@
+description "validation fails"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t003-fail.json
+return 1
+stderr-replace ^.*/defaults/ defaults/
+stderr defaults/t003-fail.json:/fail: Schema false always fails.

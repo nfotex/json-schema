@@ -1,0 +1,14 @@
+description "default value inserted inside array"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t005-in-array.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "inArray" : [
+stdout       {
+stdout          "direct" : {
+stdout             "value" : "defaultValue"
+stdout          }
+stdout       }
+stdout    ]
+stdout }

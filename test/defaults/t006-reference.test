@@ -1,0 +1,10 @@
+description "default value inserted via reference"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t006-reference.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "reference" : {
+stdout       "integer" : 42
+stdout    }
+stdout }

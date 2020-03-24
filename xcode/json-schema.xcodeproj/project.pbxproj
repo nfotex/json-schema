@@ -176,6 +176,7 @@
 		4B59E57A215D3024002262C8 /* p-option */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "p-option"; sourceTree = "<group>"; };
 		4B59E57B215D3024002262C8 /* draft7 */ = {isa = PBXFileReference; lastKnownFileType = folder; path = draft7; sourceTree = "<group>"; };
 		4B59E58D215D31F6002262C8 /* test-validate */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "test-validate"; sourceTree = BUILT_PRODUCTS_DIR; };
+		4BB42424242A30B20045D285 /* defaults */ = {isa = PBXFileReference; lastKnownFileType = folder; path = defaults; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -295,6 +296,7 @@
 			children = (
 				4B59E575215D3024002262C8 /* cleanup.cmake */,
 				4B59E579215D3024002262C8 /* CMakeLists.txt */,
+				4BB42424242A30B20045D285 /* defaults */,
 				4B59E57B215D3024002262C8 /* draft7 */,
 				4B59E574215D3024002262C8 /* NiHTest.pm */,
 				4B59E57A215D3024002262C8 /* p-option */,

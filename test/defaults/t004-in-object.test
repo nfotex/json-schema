@@ -1,0 +1,12 @@
+description "default value inserted inside object"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t004-in-object.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "inObject" : {
+stdout       "direct" : {
+stdout          "value" : "defaultValue"
+stdout       }
+stdout    }
+stdout }
