@@ -813,6 +813,10 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
     for (auto name : properties->getMemberNames()) {
       if (!instance.isMember(name)) {
         const Json::Value *property = &(*properties)[name];
+        
+        if (!property->isObject()) {
+          continue;
+        }
 
         while (property->isMember("$ref")) {
           property = resolve_ref(property);
