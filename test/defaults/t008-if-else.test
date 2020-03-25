@@ -1,0 +1,11 @@
+description "default value inserted via if, else branch"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t008-if-else.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "if" : {
+stdout       "branch" : false,
+stdout       "condition" : false
+stdout    }
+stdout }

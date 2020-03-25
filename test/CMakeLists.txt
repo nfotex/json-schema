@@ -25,6 +25,14 @@ SET(EXTRA_TESTS
   defaults/t004-in-object.test
   defaults/t005-in-array.test
   defaults/t006-reference.test
+  defaults/t007-if-then.test
+  defaults/t008-if-else.test
+  defaults/t009-all-of.test
+  defaults/t010-any-of-some.test
+  defaults/t011-any-of-all.test
+  defaults/t012-one-of-1.test
+  defaults/t013-one-of-2.test
+  defaults/t014-one-of-3.test
   p-option/t001.test
   p-option/t002.test
   p-option/t003.test

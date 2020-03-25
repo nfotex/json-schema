@@ -24,6 +24,32 @@
                 }
             ]
         },
+        "anyOf": {
+            "type": "object",
+            "anyOf": [
+                {
+                    "properties": {
+                        "choiceOne": { "enum": [ true ] },
+                        "valueOne": { "default": "defaultOne" },
+                        "valueAll": { "default": "defaultOne" }
+                    }
+                },
+                {
+                    "properties": {
+                        "choiceTwo": { "enum": [ true ] },
+                        "valueTwo": { "default": "defaultTwo" },
+                        "valueAll": { "default": "defaultTwo" }
+                    }
+                },
+                {
+                    "properties": {
+                        "choiceThree": { "enum": [ true ] },
+                        "valueThree": { "default": "defaultThree" },
+                        "valueAll": { "default": "defaultThree" }
+                    }
+                }
+            ]
+        },
         "direct": {
             "type": "object",
             "properties": {
@@ -38,7 +64,7 @@
             "if": {
                 "requred": [ "condition" ],
                 "properties": {
-                    "condition": { "enum": [ true] }
+                    "condition": { "enum": [ true ] }
                 }
             },
             "then": {

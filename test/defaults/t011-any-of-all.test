@@ -1,0 +1,16 @@
+description "default value inserted via anyOf, all choices match"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t011-any-of-all.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "anyOf" : {
+stdout       "choiceOne" : true,
+stdout       "choiceThree" : true,
+stdout       "choiceTwo" : true,
+stdout       "valueAll" : "defaultThree",
+stdout       "valueOne" : "defaultOne",
+stdout       "valueThree" : "defaultThree",
+stdout       "valueTwo" : "defaultTwo"
+stdout    }
+stdout }

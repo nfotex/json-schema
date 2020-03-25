@@ -1,0 +1,7 @@
+{
+    "anyOf": {
+        "choiceOne": true,
+        "choiceTwo": true,
+        "choiceThree": true
+    }
+}

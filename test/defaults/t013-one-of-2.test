@@ -1,0 +1,12 @@
+description "default value inserted via oneOf, second choice"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t013-one-of-2.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "oneOf" : {
+stdout       "integer" : 42,
+stdout       "type" : 2,
+stdout       "value" : "integer"
+stdout    }
+stdout }

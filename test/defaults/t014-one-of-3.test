@@ -1,0 +1,12 @@
+description "default value inserted via oneOf, third choice"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t014-one-of-3.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "oneOf" : {
+stdout       "boolean" : true,
+stdout       "type" : true,
+stdout       "value" : "boolean"
+stdout    }
+stdout }

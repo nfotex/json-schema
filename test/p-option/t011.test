@@ -1,7 +1,7 @@
 program ../src/json-validate
-args -p /properties/boks $srcdir/p-option/schema.json $srcdir/p-option/fits_schema_books.json
+args -p /properties/boks $srcdir/p-option/schema.json $srcdir/p-option/fits_subschema_books.json
 description "typo in reference, points to non-existent subschema"
 return 1
 stderr-replace ^.*/p-option/ p-option/
 stderr can't create validator: invalid schema pointer
-stderr p-option/fits_schema_books.json:: member 'boks' doesn't exist
+stderr p-option/schema.json: member 'boks' doesn't exist

@@ -1,0 +1,11 @@
+description "default value inserted via if, then branch"
+program ../src/json-validate
+args -D $srcdir/defaults/schema.json $srcdir/defaults/t007-if-then.json
+return 0
+stderr-replace ^.*/defaults/ defaults/
+stdout {
+stdout    "if" : {
+stdout       "branch" : true,
+stdout       "condition" : true
+stdout    }
+stdout }
