@@ -125,7 +125,7 @@ int main(int argc, char *argv[]) {
     catch (Json::SchemaValidator::Exception e) {
         fprintf(stderr, "%s: can't create validator: %s\n", argv[0], e.type_message().c_str());
         for (std::vector<Json::SchemaValidator::Error>::const_iterator it = e.errors.begin(); it != e.errors.end(); ++it) {
-            fprintf(stderr, "%s:%s: %s\n", document_file.c_str(), it->path.c_str(), it->message.c_str());
+            fprintf(stderr, "%s:%s%s %s\n", schema_file.c_str(), it->path.c_str(), it->path.empty() ? "" : ":",  it->message.c_str());
         }
         exit(1);
     }
@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
     if (!ok) {
         for (std::vector<Json::SchemaValidator::Error>::const_iterator it = errors.begin(); it != errors.end(); ++it) {
-            fprintf(stderr, "%s:%s: %s\n", document_file.c_str(), it->path.c_str(), it->message.c_str());
+            fprintf(stderr, "%s:%s%s %s\n", document_file.c_str(), it->path.c_str(), it->path.empty() ? "" : ":",  it->message.c_str());
         }
         exit(1);
     }
