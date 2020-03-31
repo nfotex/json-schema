@@ -296,14 +296,19 @@ class SchemaValidator {
   void collect_ids_refs(const Json::Value &node, URI base_uri, bool process_refs);
 
   const Json::Value *resolve_ref(const Json::Value *schema) const;
-  std::string path_add(const std::string &path, const std::string &element) const;
-  size_t count_utf8_characters(const std::string &str) const;
+    
+  static std::string path_add(const std::string &path, const std::string &element);
+  static std::string path_add(const std::string &path, Json::UInt64 index) { return path_add(path, UIntToString(index)); }
+  static size_t count_utf8_characters(const std::string &str);
+
+  static std::string IntToString(int i);
+  static std::string UIntToString(Json::UInt64 i);
+  static std::string DoubleToString(double d);
 
   // members that contain sub-schemata
   static const std::vector<std::string> schema_member_names;
   static const std::vector<std::string> schema_array_member_names;
   static const std::vector<std::string> schema_object_member_names;
-
 
   // The root for $ref expansion
   Json::Value refs_root_;

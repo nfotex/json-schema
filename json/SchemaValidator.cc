@@ -120,19 +120,21 @@ static void ReplaceFirstSubstringAfterOffset(std::string* str,
 }
 
 
-static std::string IntToString(int i) {
+std::string SchemaValidator::IntToString(int i) {
   char buf[1024];
 
   sprintf(buf, "%d", i);
   return std::string(buf);
 }
-static std::string UIntToString(Json::UInt64 i) {
+
+std::string SchemaValidator::UIntToString(Json::UInt64 i) {
   char buf[1024];
 
   sprintf(buf, "%" PRIu64, i);
   return std::string(buf);
 }
-static std::string DoubleToString(double d) {
+
+std::string SchemaValidator::DoubleToString(double d) {
   char buf[1024];
 
   sprintf(buf, "%f", d);
@@ -818,12 +820,13 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
           continue;
         }
 
-        while (property->isMember("$ref")) {
+        if (property->isMember("$ref")) {
           property = resolve_ref(property);
           if (property == NULL) {
             continue;
           }
         }
+        
         if (property->isMember("default")) {
           context->add_value(instance, name, (*property)["default"]);
         }
@@ -859,14 +862,14 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
     if (items.isArray()) {
       items_size = items.size();
       for (Json::ArrayIndex i = 0; i < items_size && i < instance_size; ++i) {
-        Validate(instance[i], items[i], path_add(path, UIntToString(i)), options, context);
+        Validate(instance[i], items[i], path_add(path, i), options, context);
       }
     }
     else {
       // If the items property is a single schema, each item in the array must
       // validate against that schema.
       for (Json::ArrayIndex i = 0; i < instance_size; ++i) {
-        Validate(instance[i], items, path_add(path, UIntToString(i)), options, context);
+        Validate(instance[i], items, path_add(path, i), options, context);
       }
       return;
     }
@@ -882,7 +885,7 @@ const std::string& path, const ExpansionOptions &options, ValidationContext *con
         }
         else {
           for (Json::ArrayIndex i = items_size; i < instance_size; ++i) {
-            Validate(instance[i], additional, path_add(path, UIntToString(i)), options, context);
+            Validate(instance[i], additional, path_add(path, i), options, context);
           }
         }
       }
@@ -1041,14 +1044,15 @@ const Json::Value *SchemaValidator::resolve_ref(const Json::Value *schema) const
 }
 
 
-std::string SchemaValidator::path_add(const std::string &path, const std::string &element) const {
+std::string SchemaValidator::path_add(const std::string &path, const std::string &element) {
     if (path.length() != 1) {
         return path + "/" + element;
     }
     return path + element;
 }
 
-size_t SchemaValidator::count_utf8_characters(const std::string &str) const {
+
+size_t SchemaValidator::count_utf8_characters(const std::string &str) {
   size_t length = 0;
   
   for (size_t i = 0; i < str.length(); i++) {
