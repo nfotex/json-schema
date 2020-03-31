@@ -166,6 +166,7 @@
 		4B128C0B2148F531003BFAB1 /* json-schema.pc.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = "json-schema.pc.in"; path = "../json-schema.pc.in"; sourceTree = "<group>"; };
 		4B128C0C2149056F003BFAB1 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		4B128C0D21490B16003BFAB1 /* TODO.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = TODO.md; path = ../TODO.md; sourceTree = "<group>"; };
+		4B3D620524333CA6000132EE /* NEWS.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; name = NEWS.md; path = ../NEWS.md; sourceTree = "<group>"; };
 		4B59E56C215D2FD3002262C8 /* test-url */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = "test-url"; sourceTree = BUILT_PRODUCTS_DIR; };
 		4B59E574215D3024002262C8 /* NiHTest.pm */ = {isa = PBXFileReference; lastKnownFileType = text.script.perl; path = NiHTest.pm; sourceTree = "<group>"; };
 		4B59E575215D3024002262C8 /* cleanup.cmake */ = {isa = PBXFileReference; lastKnownFileType = text; path = cleanup.cmake; sourceTree = "<group>"; };
@@ -227,6 +228,7 @@
 		4B128BB12147E38C003BFAB1 = {
 			isa = PBXGroup;
 			children = (
+				4B3D620524333CA6000132EE /* NEWS.md */,
 				4B128BBC2147E4B5003BFAB1 /* CMakeLists.txt */,
 				4B128BBE2147E4B5003BFAB1 /* INSTALL.md */,
 				4B128C0C2149056F003BFAB1 /* LICENSE */,

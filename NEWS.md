@@ -1,3 +1,10 @@
+1.3 [2020-03-31]
+================
+
+* option to add default values during validation
+* build static library by default (jsoncpp only builds static library by default)
+
+
 1.2 [2019-04-09]
 ================
 
