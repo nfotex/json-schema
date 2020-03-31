@@ -2,6 +2,7 @@
 ================
 
 * option to add default values during validation
+* add thread-safe API
 * build static library by default (jsoncpp only builds static library by default)
 
 
