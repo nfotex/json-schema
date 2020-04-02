@@ -13,18 +13,11 @@ before_install:
      brew install jsoncpp;
    fi
 
-install:
-  - if [ "$TRAVIS_OS_NAME" = "linux" -a "$CXX" = "g++" ]; then export CXX="g++-4.8" CC="gcc-4.8"; fi
 addons:
   apt:
     sources:
       - ubuntu-toolchain-r-test
     packages:
-      - libyajl-dev
-      - libxml2-dev
-      - gcc-4.8
-      - g++-4.8
-      - clang
       - libjsoncpp-dev
 script:
  - mkdir build
