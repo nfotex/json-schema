@@ -48,7 +48,7 @@ int main(int argc, char **argv) {
     try {
         base = Json::URI(argv[1]);
     }
-    catch (std::exception e) {
+    catch (std::exception &e) {
         fprintf(stderr, "%s: can't create URL: %s\n", argv[1], e.what());
         exit(1);
     }
@@ -75,7 +75,7 @@ int main(int argc, char **argv) {
             
             printf("%s\n", resolved.get_uri().c_str());
         }
-        catch (std::exception e) {
+        catch (std::exception &e) {
             fprintf(stderr, "%s: can't create URL: %s\n", argv[2], e.what());
             exit(1);
         }
