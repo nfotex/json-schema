@@ -122,14 +122,14 @@ int main(int argc, char *argv[]) {
             validator = new Json::SchemaValidator(schema_str);
         }
     }
-    catch (Json::SchemaValidator::Exception e) {
+    catch (Json::SchemaValidator::Exception &e) {
         fprintf(stderr, "%s: can't create validator: %s\n", argv[0], e.type_message().c_str());
         for (std::vector<Json::SchemaValidator::Error>::const_iterator it = e.errors.begin(); it != e.errors.end(); ++it) {
             fprintf(stderr, "%s:%s%s %s\n", schema_file.c_str(), it->path.c_str(), it->path.empty() ? "" : ":",  it->message.c_str());
         }
         exit(1);
     }
-    catch (std::exception e) {
+    catch (std::exception &e) {
         fprintf(stderr, "%s: can't create validator: %s\n", argv[0], e.what());
         exit(1);
     }
